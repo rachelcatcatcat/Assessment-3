@@ -1,0 +1,98 @@
+---
+title: "Buisiness Analysis Project of IKEA FURNITURE"
+author: "Rachelxiong s4647301 & Sammi Ma s4659396"
+date: "9/14/2021"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Data
+```{r}
+library(tidyverse)
+library(knitr)
+library(tidymodels)
+library(patchwork)
+ikea <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-11-03/ikea.csv')
+summary(ikea)
+```
+
+---
+## DATA CLEANSING
+Before we start our data analysis, there are some cleaning to be done in this dataset.
+### 1. Unified the currency
+```{r}
+ikea%>%mutate(price_usd = round(price * 0.27, 1))
+```
+### 2. Calculate the volume of each iteam.
+```{r}
+na_volume <- ikea %>%
+  na.omit(depth) %>%
+  na.omit(height) %>%
+  na.omit(width) %>%
+  mutate(volume_m3 = height * width * depth / (100^3))
+```
+
+### 3. How many items have other color?
+```{r}
+ikea%>%
+  mutate(price_usd = round(price * 0.27, 1))%>%
+  filter(other_colors == 'Yes')%>%
+  count(price_usd)
+```
+
+## ASKING QUESTIONS
+### Major question: Can we predict the price of the IKEA furniture by knowing their categories and colour?
+Subquestions:
+Q1. What's the average price of IKEA furniture per category?
+Q2. What is the relation between the price and the colour?
+Q3. Is the relation between the price and category  dependent on volume?
+
+## DESCRIPTIVE or EXPLORATORY ANALYSIS
+Now let's explore the data by finding the answer to the above subquestions.
+
+### 1. What's the average price of IKEA furniture per category?
+```{r}
+ikea%>%
+  group_by(category)%>%
+  mutate(price_usd = round(price * 0.27, 1))%>%
+  summarise(count=n(),average_price=mean(price_usd))%>%
+  ggplot(aes(x = category, y = average_price)) +
+  geom_col() + 
+  coord_flip() +
+  theme_minimal() +
+  labs(x = "Category",
+       y = "Average price",
+       title = "What's the average price of IKEA furniture per category")
+
+```
+
+### 2. What is the relation between the price and color?
+```{r}
+na_volume %>%
+  mutate(price_usd = round(price * 0.27, 1))%>%
+  filter(other_colors =="Yes") %>%
+  count(price_usd) %>%
+  ggplot(aes(price_usd,n))+geom_point(fill="blue")+
+  geom_smooth(method = lm, se = FALSE)+labs(title='The price_usd distribution of items which have other colors')
+```
+
+### 3. What is the relation between the price and volume?
+```{r}
+na_volume %>%
+  ggplot(aes(price, volume_m3)) +
+  geom_point() +
+  geom_smooth(method = lm, se = FALSE) +
+  scale_color_viridis_d(option = "plasma", end = .7) +
+  labs(x = "price", y = "volume", colour = "cetegory", title = "")
+
+
+```
+
+
+
+
+
